@@ -44,19 +44,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun saveUserIdToCache(context: Context, userId: String) {
-    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-    with(sharedPreferences.edit()) {
-        putString("user_id", userId)
-        apply()
-    }
-}
-
-fun isValidEmail(email: String): Boolean {
-    val emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+"
-    return email.matches(emailPattern.toRegex())
-}
-
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
     val email = remember { mutableStateOf("") }
