@@ -4,11 +4,13 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-data class LoginRequest(val email: String, val password: String)
-data class LoginResponse(val message: String)
 
-data class RegisterRequest(val email: String, val password: String)
-data class RegisterResponse(val message: String)
+
+data class RegisterRequest(val correo: String, val contrasena: String)
+data class RegisterResponse(
+    val message: String,
+    val id: Int
+)
 
 interface ApiService {
     @POST("/login")

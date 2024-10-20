@@ -1,41 +1,37 @@
 package com.example.myhouse
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.myhouse.ui.theme.MyHouseTheme
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
-val DarkBlue = Color(0xFF00008B)
+import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MyHouseTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                BaseLayout(showFooter = false) { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
                         onLoginSuccess = {
@@ -48,10 +44,24 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun saveUserIdToCache(context: Context, userId: String) {
+    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    with(sharedPreferences.edit()) {
+        putString("user_id", userId)
+        apply()
+    }
+}
+
+fun isValidEmail(email: String): Boolean {
+    val emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+"
+    return email.matches(emailPattern.toRegex())
+}
+
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
+    val passwordVisible = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Column(
@@ -61,56 +71,68 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        BasicTextField(
+        OutlinedTextField(
             value = email.value,
             onValueChange = { email.value = it },
+            label = { Text("Correo") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            decorationBox = { innerTextField ->
-                if (email.value.isEmpty()) {
-                    Text(text = "Correo", color = Color.Gray)
-                }
-                innerTextField()
-            }
+                .padding(bottom = 8.dp)
         )
-        BasicTextField(
+        OutlinedTextField(
             value = password.value,
             onValueChange = { password.value = it },
+            label = { Text("Contraseña") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            visualTransformation = PasswordVisualTransformation(),
-            decorationBox = { innerTextField ->
-                if (password.value.isEmpty()) {
-                    Text(text = "Contraseña", color = Color.Gray)
+            visualTransformation = if (passwordVisible.value) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible.value) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible.value = !passwordVisible.value }) {
+                    Icon(imageVector = image, contentDescription = if (passwordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
-                innerTextField()
             }
         )
         Button(
             onClick = {
-                val request = LoginRequest(email.value, password.value)
-                RetrofitClient.instance.login(request).enqueue(object : Callback<LoginResponse> {
-                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                        if (response.isSuccessful) {
-                            val message = response.body()?.message
-                            if (message == "Usuario correcto") {
-                                onLoginSuccess()
-                            } else {
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                if (email.value.isNotEmpty() && password.value.isNotEmpty()) {
+                    if (isValidEmail(email.value)) {
+                        val request = LoginRequest(email.value, password.value)
+                        RetrofitClient.instance.login(request).enqueue(object : Callback<LoginResponse> {
+                            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                                Log.d("LoginRequest", "Request: ${call.request().url()}")
+                                Log.d("LoginResponse", "Response: ${response.body()}")
+                                Log.d("LoginResponse", "Response Code: ${response.code()}")
+                                Log.d("LoginResponse", "Response Message: ${response.message()}")
+                                if (response.isSuccessful) {
+                                    val message = response.body()?.message
+                                    val id = response.body()?.id
+                                    if (message == "Usuario correcto" && id != null) {
+                                        saveUserIdToCache(context, id.toString())
+                                        Toast.makeText(context, "Verificado", Toast.LENGTH_SHORT).show()
+                                        onLoginSuccess()
+                                    } else {
+                                        Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Toast.makeText(context, response.body()?.message ?: "usuario o contraseña incorrecto", Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        } else {
-                            Toast.makeText(context, "Error en la respuesta", Toast.LENGTH_SHORT).show()
-                        }
-                    }
 
-                    override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                        Toast.makeText(context, "Error en la solicitud", Toast.LENGTH_SHORT).show()
+                            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                                Log.e("LoginRequest", "Request failed: ${t.message}")
+                                Toast.makeText(context, "Error en la solicitud", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    } else {
+                        Toast.makeText(context, "Por favor, ingrese un correo electrónico válido", Toast.LENGTH_SHORT).show()
                     }
-                })
+                } else {
+                    Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+                }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = DarkBlue),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
