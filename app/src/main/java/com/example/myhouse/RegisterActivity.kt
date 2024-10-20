@@ -56,7 +56,6 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
     val passwordVisible = remember { mutableStateOf(false) }
     val confirmPasswordVisible = remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var isRegistered by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -105,66 +104,54 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
-        if (!isRegistered) {
-            Button(
-                onClick = {
-                    if (email.value.isNotEmpty() && password.value.isNotEmpty() && confirmPassword.value.isNotEmpty()) {
-                        if (isValidEmail(email.value)) {
-                            if (password.value == confirmPassword.value) {
-                                val request = RegisterRequest(email.value, password.value)
-                                RetrofitClient.instance.register(request).enqueue(object : Callback<RegisterResponse> {
-                                    override fun onResponse(call: Call<RegisterResponse>, response: Response<RegisterResponse>) {
-                                        Log.d("RegisterRequest", "Request: ${call.request().url()}")
-                                        Log.d("RegisterResponse", "Response: ${response.body()}")
-                                        Log.d("RegisterResponse", "Response Code: ${response.code()}")
-                                        Log.d("RegisterResponse", "Response Message: ${response.message()}")
-                                        if (response.isSuccessful) {
-                                            val message = response.body()?.message
-                                            val id = response.body()?.id
-                                            if (message == "Usuario creado correctamente" && id != null) {
-                                                saveUserIdToCache(context, id.toString())
-                                                Toast.makeText(context, "Cuenta creada", Toast.LENGTH_SHORT).show()
-                                                isRegistered = true
-                                            } else {
-                                                Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_SHORT).show()
-                                            }
+        Button(
+            onClick = {
+                if (email.value.isNotEmpty() && password.value.isNotEmpty() && confirmPassword.value.isNotEmpty()) {
+                    if (isValidEmail(email.value)) {
+                        if (password.value == confirmPassword.value) {
+                            val request = RegisterRequest(email.value, password.value)
+                            RetrofitClient.instance.register(request).enqueue(object : Callback<RegisterResponse> {
+                                override fun onResponse(call: Call<RegisterResponse>, response: Response<RegisterResponse>) {
+                                    Log.d("RegisterRequest", "Request: ${call.request().url()}")
+                                    Log.d("RegisterResponse", "Response: ${response.body()}")
+                                    Log.d("RegisterResponse", "Response Code: ${response.code()}")
+                                    Log.d("RegisterResponse", "Response Message: ${response.message()}")
+                                    if (response.isSuccessful) {
+                                        val message = response.body()?.message
+                                        val id = response.body()?.id
+                                        if (message == "Usuario creado correctamente" && id != null) {
+                                            saveUserIdToCache(context, id.toString())
+                                            Toast.makeText(context, "Cuenta creada", Toast.LENGTH_SHORT).show()
+                                            onRegisterSuccess()
                                         } else {
-                                            Toast.makeText(context, response.body()?.message ?: "Error al crear la cuenta", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_SHORT).show()
                                         }
+                                    } else {
+                                        Toast.makeText(context, response.body()?.message ?: "Error al crear la cuenta", Toast.LENGTH_SHORT).show()
                                     }
+                                }
 
-                                    override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
-                                        Log.e("RegisterRequest", "Request failed: ${t.message}")
-                                        Toast.makeText(context, "Error en la solicitud", Toast.LENGTH_SHORT).show()
-                                    }
-                                })
-                            } else {
-                                Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
-                            }
+                                override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
+                                    Log.e("RegisterRequest", "Request failed: ${t.message}")
+                                    Toast.makeText(context, "Error en la solicitud", Toast.LENGTH_SHORT).show()
+                                }
+                            })
                         } else {
-                            Toast.makeText(context, "Por favor, ingrese un correo electrónico válido", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Por favor, ingrese un correo electrónico válido", Toast.LENGTH_SHORT).show()
                     }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-            ) {
-                Text(text = "Registrar", color = Color.White)
-            }
-        } else {
-            Button(
-                onClick = { onRegisterSuccess() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-            ) {
-                Text(text = "Ingresar", color = Color.White)
-            }
+                } else {
+                    Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+                }
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            Text(text = "Registrar", color = Color.White)
         }
     }
 }
