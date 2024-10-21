@@ -6,7 +6,6 @@ import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.http.Path
 
-
 data class RegisterRequest(val correo: String, val contrasena: String)
 data class RegisterResponse(
     val message: String,
@@ -32,6 +31,24 @@ data class UserInfo(
 data class AddDeviceRequest(val userId: Int, val nombreDispositivo: String, val contrasenaDispositivo: String)
 data class AddDeviceResponse(val message: String)
 
+data class AirQualityResponse(
+    val indice_calidad_aire: Int,
+    val fecha: String,
+    val hora: String,
+    val NombreDispositivo: String
+)
+
+data class ErrorResponse(
+    val message: String
+)
+
+data class TemperatureResponse(
+    val temperatura: Double,
+    val fecha: String,
+    val hora: String,
+    val NombreDispositivo: String
+)
+
 interface ApiService {
     @POST("/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
@@ -48,8 +65,12 @@ interface ApiService {
     @GET("usuario/{id}")
     suspend fun getUserInfo(@Path("id") id: Int): UserInfo
 
-
     @POST("/agregar-dispositivo")
     fun addDevice(@Body request: AddDeviceRequest): Call<AddDeviceResponse>
 
+    @GET("calidad-aire/{userId}")
+    fun getAirQuality(@Path("userId") userId: Int): Call<AirQualityResponse>
+
+    @GET("temperatura/{id}")
+    fun getTemperature(@Path("id") userId: Int): Call<TemperatureResponse>
 }

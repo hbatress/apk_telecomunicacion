@@ -126,7 +126,12 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                                             Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_SHORT).show()
                                         }
                                     } else {
-                                        Toast.makeText(context, response.body()?.message ?: "Error al crear la cuenta", Toast.LENGTH_SHORT).show()
+                                        val errorMessage = response.errorBody()?.string()
+                                        if (errorMessage?.contains("El correo ya está registrado") == true) {
+                                            Toast.makeText(context, "El correo ya está registrado", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, response.body()?.message ?: "Error al crear la cuenta", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
 
