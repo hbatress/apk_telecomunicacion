@@ -17,6 +17,12 @@ data class Device(
     val NombreDispositivo: String,
     val NombreTipo: String
 )
+data class CameraResponse(
+    val guardar_fotografia: String,
+    val fecha: String,
+    val hora: String,
+    val NombreDispositivo: String
+)
 
 interface ApiService {
     @POST("/login")
@@ -27,5 +33,8 @@ interface ApiService {
 
     @GET("dispositivos/{id}")
     suspend fun getDevices(@Path("id") userId: Int): List<Device>
+
+    @GET("recursocamara/{id}")
+    suspend fun getCameraResource(@Path("id") deviceId: Int): CameraResponse
 
 }
