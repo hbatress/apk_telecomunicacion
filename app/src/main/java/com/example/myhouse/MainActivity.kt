@@ -88,7 +88,7 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                         val request = LoginRequest(email.value, password.value)
                         RetrofitClient.instance.login(request).enqueue(object : Callback<LoginResponse> {
                             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                Log.d("LoginRequest", "Request: ${call.request().url()}")
+
                                 Log.d("LoginResponse", "Response: ${response.body()}")
                                 Log.d("LoginResponse", "Response Code: ${response.code()}")
                                 Log.d("LoginResponse", "Response Message: ${response.message()}")

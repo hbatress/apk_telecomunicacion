@@ -112,7 +112,6 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                             val request = RegisterRequest(email.value, password.value)
                             RetrofitClient.instance.register(request).enqueue(object : Callback<RegisterResponse> {
                                 override fun onResponse(call: Call<RegisterResponse>, response: Response<RegisterResponse>) {
-                                    Log.d("RegisterRequest", "Request: ${call.request().url()}")
                                     Log.d("RegisterResponse", "Response: ${response.body()}")
                                     Log.d("RegisterResponse", "Response Code: ${response.code()}")
                                     Log.d("RegisterResponse", "Response Message: ${response.message()}")
