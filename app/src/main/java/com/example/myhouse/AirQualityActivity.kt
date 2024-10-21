@@ -12,23 +12,24 @@ class AirQualityActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
+        val userId = getUserIdFromCache(this)?.toIntOrNull()
         setContent {
             MyHouseTheme {
-                AirQualityScreen(deviceId)
+                AirQualityScreen(deviceId, userId)
             }
         }
     }
 }
 
 @Composable
-fun AirQualityScreen(deviceId: Int) {
-    Text(text = "Air Quality Monitor ID: $deviceId")
+fun AirQualityScreen(deviceId: Int, userId: Int?) {
+    Text(text = "Air Quality Monitor ID: $deviceId, User ID: $userId")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun AirQualityScreenPreview() {
     MyHouseTheme {
-        AirQualityScreen(deviceId = 1)
+        AirQualityScreen(deviceId = 1, userId = 123)
     }
 }

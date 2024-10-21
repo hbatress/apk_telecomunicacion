@@ -12,23 +12,24 @@ class TemperatureControlActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
+        val userId = getUserIdFromCache(this)?.toIntOrNull()
         setContent {
             MyHouseTheme {
-                TemperatureControlScreen(deviceId)
+                TemperatureControlScreen(deviceId, userId)
             }
         }
     }
 }
 
 @Composable
-fun TemperatureControlScreen(deviceId: Int) {
-    Text(text = "Temperature Control ID: $deviceId")
+fun TemperatureControlScreen(deviceId: Int, userId: Int?) {
+    Text(text = "Temperature Control ID: $deviceId, User ID: $userId")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun TemperatureControlScreenPreview() {
     MyHouseTheme {
-        TemperatureControlScreen(deviceId = 1)
+        TemperatureControlScreen(deviceId = 1, userId = 123)
     }
 }

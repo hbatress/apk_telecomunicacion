@@ -24,6 +24,14 @@ data class CameraResponse(
     val NombreDispositivo: String
 )
 
+data class UserInfo(
+    val correo: String,
+    val contrasena: String,
+    val cantidad_dispositivos: Int
+)
+data class AddDeviceRequest(val userId: Int, val nombreDispositivo: String, val contrasenaDispositivo: String)
+data class AddDeviceResponse(val message: String)
+
 interface ApiService {
     @POST("/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
@@ -36,5 +44,12 @@ interface ApiService {
 
     @GET("recursocamara/{id}")
     suspend fun getCameraResource(@Path("id") deviceId: Int): CameraResponse
+
+    @GET("usuario/{id}")
+    suspend fun getUserInfo(@Path("id") id: Int): UserInfo
+
+
+    @POST("/agregar-dispositivo")
+    fun addDevice(@Body request: AddDeviceRequest): Call<AddDeviceResponse>
 
 }

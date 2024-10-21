@@ -10,7 +10,13 @@ fun isValidEmail(email: String): Boolean {
 fun saveUserIdToCache(context: Context, userId: String) {
     val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     with(sharedPreferences.edit()) {
-        putString("user_id", userId)
+        remove("user_id") // Remove any existing user ID
+        putString("user_id", userId) // Save the new user ID
         apply()
     }
+}
+
+fun getUserIdFromCache(context: Context): String? {
+    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getString("user_id", null)
 }

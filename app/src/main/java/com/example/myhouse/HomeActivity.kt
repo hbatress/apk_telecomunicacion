@@ -66,11 +66,15 @@ class HomeActivity : ComponentActivity() {
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel()
     val devices by viewModel.devices.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.fetchDevices(1) // Replace with the actual user ID
+        val userId = getUserIdFromCache(context)?.toIntOrNull()
+        if (userId != null) {
+            viewModel.fetchDevices(userId)
+        }
     }
 
     Column(
@@ -90,7 +94,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         )
 
         if (devices.isEmpty()) {
-            Text(text = "Sin dispositivos enlazadas", color = Color.Black, fontWeight = FontWeight.Bold)
+            Text(text = "Sin dispositivos enlazados", color = Color.Black, fontWeight = FontWeight.Bold)
         } else {
             ListSection(title = "Cámara de Seguridad", items = devices.filter { it.NombreTipo == "Cámara de seguridad" }, iconResId = R.drawable.ic_camera)
             Spacer(modifier = Modifier.height(16.dp))

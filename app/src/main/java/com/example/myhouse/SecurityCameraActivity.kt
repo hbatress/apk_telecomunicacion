@@ -39,16 +39,17 @@ class SecurityCameraActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
+        val userId = getUserIdFromCache(this)?.toIntOrNull()
 
         // Iniciar la UI composable
         setContent {
-            SecurityCameraScreen(deviceId)
+            SecurityCameraScreen(deviceId, userId)
         }
     }
 }
 
 @Composable
-fun SecurityCameraScreen(deviceId: Int) {
+fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
     var cameraResponse by remember { mutableStateOf<CameraResponse?>(null) }
     var lastUpdateTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var isPaused by remember { mutableStateOf(false) }
