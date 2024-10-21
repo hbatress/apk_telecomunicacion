@@ -32,7 +32,7 @@ class RegisterActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyHouseTheme {
-                BaseLayout(showFooter = false) { innerPadding ->
+                BaseLayout(showFooter = false, currentPage = "Register") { innerPadding ->
                     RegisterScreen(
                         modifier = Modifier.padding(innerPadding),
                         onRegisterSuccess = {

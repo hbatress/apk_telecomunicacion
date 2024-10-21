@@ -9,9 +9,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-
 @Composable
-fun BaseLayout(showFooter: Boolean, content: @Composable (PaddingValues) -> Unit) {
+fun BaseLayout(showFooter: Boolean, currentPage: String, content: @Composable (PaddingValues) -> Unit) {
     val view = LocalView.current
     val insets = ViewCompat.getRootWindowInsets(view)
     val topInset = with(LocalDensity.current) { insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.top?.toDp() ?: 0.dp }
@@ -24,7 +23,7 @@ fun BaseLayout(showFooter: Boolean, content: @Composable (PaddingValues) -> Unit
             content(PaddingValues())
         }
         if (showFooter) {
-            Footer(modifier = Modifier.fillMaxWidth())
+            Footer(modifier = Modifier.fillMaxWidth(), currentPage = currentPage)
         }
     }
 }

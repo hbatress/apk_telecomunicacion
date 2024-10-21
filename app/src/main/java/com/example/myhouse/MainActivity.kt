@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyHouseTheme {
-                BaseLayout(showFooter = false) { innerPadding ->
+                BaseLayout(showFooter = false, currentPage = "Login") { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
                         onLoginSuccess = {

@@ -6,23 +6,25 @@ import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
 import com.example.myhouse.ui.theme.MyHouseTheme
 
-class HomeActivity : ComponentActivity() {
+class AddActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false) // Ensure content extends into system bars
         setContent {
             MyHouseTheme {
-                BaseLayout(showFooter = true, currentPage = "Inicio") { innerPadding ->
+                BaseLayout(showFooter = true, currentPage = "Agregar") { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                        HomeScreen(modifier = Modifier.weight(1f))
+                        AddScreen(modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -31,20 +33,21 @@ class HomeActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun AddScreen(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .background(Color(0xFFecf0f1)) // Set the background color
+            .background(Color(0xFFecf0f1))
             .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
     ) {
-        Text(text = "Welcome to the Home Screen!")
+        Text(text = "Welcome to the Add Screen!")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun HomeScreenPreview() {
+fun AddScreenPreview() {
     MyHouseTheme {
-        HomeScreen()
+        AddScreen()
     }
 }
