@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -18,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -59,6 +63,7 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
     val passwordVisible = remember { mutableStateOf(false) }
     val confirmPasswordVisible = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = modifier
@@ -84,7 +89,11 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = {
+                keyboardController?.hide()
+            })
         )
         OutlinedTextField(
             value = password.value,
@@ -100,7 +109,10 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                     Icon(imageVector = image, contentDescription = if (passwordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Password),
+            keyboardActions = KeyboardActions(onNext = {
+                keyboardController?.hide()
+            }),
             singleLine = true
         )
         OutlinedTextField(
@@ -117,7 +129,10 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                     Icon(imageVector = image, contentDescription = if (confirmPasswordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done, keyboardType = KeyboardType.Password),
+            keyboardActions = KeyboardActions(onDone = {
+                keyboardController?.hide()
+            }),
             singleLine = true
         )
         Button(

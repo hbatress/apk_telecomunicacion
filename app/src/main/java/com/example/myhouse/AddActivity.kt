@@ -80,7 +80,7 @@ fun AddScreen(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
             )
-            val image: Painter = painterResource(id = R.drawable.agregar) // Replace with your image resource
+            val image: Painter = painterResource(id = R.drawable.agregar) // Reemplaza con tu recurso de imagen
             Image(
                 painter = image,
                 contentDescription = null,
@@ -90,7 +90,13 @@ fun AddScreen(modifier: Modifier = Modifier) {
             )
             OutlinedTextField(
                 value = deviceName,
-                onValueChange = { deviceName = it },
+                onValueChange = {
+                    deviceName = if (it.isNotEmpty()) {
+                        it[0].uppercaseChar() + it.substring(1).lowercase()
+                    } else {
+                        it
+                    }
+                },
                 label = { Text("Nombre del dispositivo") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,7 +105,13 @@ fun AddScreen(modifier: Modifier = Modifier) {
             )
             OutlinedTextField(
                 value = devicePassword,
-                onValueChange = { devicePassword = it },
+                onValueChange = {
+                    devicePassword = if (it.isNotEmpty()) {
+                        it[0].uppercaseChar() + it.substring(1).lowercase()
+                    } else {
+                        it
+                    }
+                },
                 label = { Text("Contraseña del dispositivo") },
                 modifier = Modifier
                     .fillMaxWidth()

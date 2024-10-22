@@ -9,24 +9,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.myhouse.ui.theme.MyHouseTheme
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
@@ -53,6 +56,7 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
     val password = remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current // Controlador de teclado
 
     Column(
         modifier = modifier
@@ -77,7 +81,13 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
             label = { Text("Correo") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = 8.dp),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Next // Acción de teclado
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { /* Cerrar teclado al presionar Enter */ keyboardController?.hide() }
+            )
         )
         OutlinedTextField(
             value = password.value,
@@ -92,7 +102,15 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                 IconButton(onClick = { passwordVisible.value = !passwordVisible.value }) {
                     Icon(imageVector = image, contentDescription = if (passwordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
-            }
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done // Acción de teclado
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide() // Cerrar teclado al presionar Enter
+                }
+            )
         )
         Button(
             onClick = {
@@ -101,7 +119,6 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                         val request = LoginRequest(email.value, password.value)
                         RetrofitClient.instance.login(request).enqueue(object : Callback<LoginResponse> {
                             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-
                                 Log.d("LoginResponse", "Response: ${response.body()}")
                                 Log.d("LoginResponse", "Response Code: ${response.code()}")
                                 Log.d("LoginResponse", "Response Message: ${response.message()}")
