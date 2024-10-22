@@ -1,9 +1,14 @@
 package com.example.myhouse
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.core.content.ContextCompat
 import com.example.myhouse.ui.theme.MyHouseTheme
 import kotlinx.coroutines.delay
 import retrofit2.Call
@@ -31,6 +37,15 @@ import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 class AirQualityActivity : ComponentActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            startAirQualityService()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
@@ -45,6 +60,28 @@ class AirQualityActivity : ComponentActivity() {
                 }
             }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    startAirQualityService()
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            startAirQualityService()
+        }
+    }
+
+    private fun startAirQualityService() {
+        val intent = Intent(this, AirQualityNotificationService::class.java)
+        intent.putExtra("USER_ID", 1) // Pass the user ID as needed
+        startService(intent)
     }
 }
 
@@ -87,7 +124,7 @@ fun AirQualityScreen(deviceId: Int, userId: Int) {
                 }
             })
 
-            delay(2000) // Delay for 5 seconds before making the next request
+            delay(2000) // Delay for 2 seconds before making the next request
         }
     }
 
