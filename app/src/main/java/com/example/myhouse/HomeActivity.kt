@@ -12,8 +12,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -151,26 +149,27 @@ fun ListItem(text: String, iconResId: Int, deviceId: Int, deviceType: String) {
         Image(
             painter = painterResource(id = iconResId),
             contentDescription = text,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(35.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, color = Color.Black)
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = {
-            val userId = getUserIdFromCache(context)?.toIntOrNull()
-            if (userId != null) {
-                com.example.myhouse.deleteDevice(context, userId, deviceId, onSuccess = {
-                    viewModel.fetchDevices(userId) // Update the list after deletion
-                }, onError = { errorMessage ->
-                    // Handle error
-                })
-            }
-        }) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_delete),
-                contentDescription = "Eliminar dispositivo"
-            )
-        }
+        Image(
+            painter = painterResource(id = R.drawable.ic_delete),
+            contentDescription = "Eliminar dispositivo",
+            modifier = Modifier
+                .size(45.dp)
+                .clickable {
+                    val userId = getUserIdFromCache(context)?.toIntOrNull()
+                    if (userId != null) {
+                        com.example.myhouse.deleteDevice(context, userId, deviceId, onSuccess = {
+                            viewModel.fetchDevices(userId) // Update the list after deletion
+                        }, onError = { errorMessage ->
+                            // Handle error
+                        })
+                    }
+                }
+        )
     }
 }
 
