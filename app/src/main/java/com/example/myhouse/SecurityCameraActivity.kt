@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,8 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
     var lastUpdateTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var isPaused by remember { mutableStateOf(false) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var lastTimestamp by remember { mutableStateOf("") }
+    var repeatCount by remember { mutableStateOf(0) }
     val context = LocalContext.current
     val lifecycle = (context as ComponentActivity).lifecycle
     val imageQueue = remember { ConcurrentLinkedQueue<Bitmap>() }
@@ -63,8 +66,11 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
 
     DisposableEffect(deviceId) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_DESTROY) {
-                // Manejo de limpieza si es necesario
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> isPaused = false
+                Lifecycle.Event.ON_PAUSE -> isPaused = true
+                Lifecycle.Event.ON_DESTROY -> isPaused = true
+                else -> {}
             }
         }
         lifecycle.addObserver(observer)
@@ -92,6 +98,15 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
                                     // Decodificación de imagen a resolución más baja
                                     val decodedBitmap = decodeBase64ToBitmap(response.guardar_fotografia, 200, 200)
                                     imageQueue.add(decodedBitmap)
+
+                                    // Check for repeated timestamps
+                                    val currentTimestamp = "${response.fecha} ${response.hora}"
+                                    if (currentTimestamp == lastTimestamp) {
+                                        repeatCount++
+                                    } else {
+                                        repeatCount = 0
+                                    }
+                                    lastTimestamp = currentTimestamp
                                 }
                             }
                         }
@@ -99,7 +114,7 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
                         Log.e("SecurityCameraScreen", "Error fetching camera resource", e)
                     }
                 }
-                delay(100) // Espera reducida para obtener respuestas más rápido
+                delay(1000) // Espera de 1 segundo antes de la siguiente solicitud
             }
         }
     }
@@ -120,13 +135,24 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
     val currentTime = System.currentTimeMillis()
     val isCameraInactive = (currentTime - lastUpdateTime) > 3000 // Reducimos el tiempo de inactividad a 3 segundos
 
-    if (isCameraInactive) {
-        Text(
-            text = "Cámara desactivada o fuera de servicio",
-            color = Color.Red,
+    if (isCameraInactive || repeatCount > 3) {
+        Column(
             modifier = Modifier.fillMaxSize(),
-            textAlign = TextAlign.Center
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Cámara desconectada",
+                color = Color.Red,
+                textAlign = TextAlign.Center,
+                fontSize = 24.sp
+            )
+            Image(
+                painter = painterResource(id = R.drawable.desconectar), // Replace with your disconnected icon resource
+                contentDescription = null,
+                modifier = Modifier.size(100.dp)
+            )
+        }
     } else {
         cameraResponse?.let { response ->
             Column(
