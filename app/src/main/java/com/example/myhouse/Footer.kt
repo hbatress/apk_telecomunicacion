@@ -27,15 +27,23 @@ fun Footer(modifier: Modifier = Modifier, currentPage: String) {
     val view = LocalView.current
     val insets = ViewCompat.getRootWindowInsets(view)
     val bottomInset = with(LocalDensity.current) { insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.bottom?.toDp() ?: 0.dp }
+    val navigationBars = insets?.getInsets(WindowInsetsCompat.Type.navigationBars())
+
+    // Detecta si el dispositivo tiene botones de navegación en lugar de gestos
+    val hasNavigationButtons = navigationBars?.bottom != 0
+
+    // Define la altura del footer, ajustando cuando hay botones de navegación
+    val footerHeight = if (hasNavigationButtons) 0.13f else 0.10f
+
     val context = LocalContext.current
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.10f) // Ensure the Column occupies 10% of the height
+            .fillMaxHeight(footerHeight) // Ajusta la altura del footer dinámicamente
             .background(Color.White)
-            .border(2.dp, Color.Gray, RoundedCornerShape(16.dp)) // Add border with rounded corners
-            .padding(bottom = bottomInset) // Only apply bottom padding for system bars
+            .border(2.dp, Color.Gray, RoundedCornerShape(16.dp)) // Agrega borde con esquinas redondeadas
+            .padding(bottom = bottomInset) // Solo aplica padding inferior para barras del sistema
     ) {
         Row(
             modifier = Modifier
@@ -53,7 +61,8 @@ fun Footer(modifier: Modifier = Modifier, currentPage: String) {
                     if (currentPage != "Inicio") {
                         context.startActivity(Intent(context, HomeActivity::class.java))
                     }
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
             FooterItem(
                 iconResId = R.drawable.ic_add,
@@ -63,7 +72,8 @@ fun Footer(modifier: Modifier = Modifier, currentPage: String) {
                     if (currentPage != "Agregar") {
                         context.startActivity(Intent(context, AddActivity::class.java))
                     }
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
             FooterItem(
                 iconResId = R.drawable.ic_settings,
@@ -73,19 +83,20 @@ fun Footer(modifier: Modifier = Modifier, currentPage: String) {
                     if (currentPage != "Ajustes") {
                         context.startActivity(Intent(context, SettingsActivity::class.java))
                     }
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
         }
     }
 }
 
 @Composable
-fun FooterItem(iconResId: Int, text: String, isSelected: Boolean, onClick: () -> Unit) {
+fun FooterItem(iconResId: Int, text: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center, // Center content vertically
-        modifier = Modifier
-            .fillMaxHeight() // Ensure the Column fills the available height
+        verticalArrangement = Arrangement.Center, // Centrar el contenido verticalmente
+        modifier = modifier
+            .fillMaxHeight() // Asegura que la columna llene la altura disponible
             .clickable(onClick = onClick)
             .padding(8.dp)
     ) {
