@@ -238,7 +238,7 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
                 }
                 Text(
                     text = "${data.temperatura}°C",
-                    fontSize = 48.sp, // Larger font size
+                    fontSize = 40.sp, // Larger font size
                     fontWeight = FontWeight.Bold, // Bold text
                     color = Color.Black,
                     modifier = Modifier.align(Alignment.CenterVertically)

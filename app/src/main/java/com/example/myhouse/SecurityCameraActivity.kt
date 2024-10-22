@@ -30,11 +30,10 @@ import android.util.Base64
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import java.util.concurrent.atomic.AtomicInteger
 
 class SecurityCameraActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,14 +51,12 @@ class SecurityCameraActivity : ComponentActivity() {
 @Composable
 fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
     var cameraResponse by remember { mutableStateOf<CameraResponse?>(null) }
-    var lastUpdateTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var isPaused by remember { mutableStateOf(false) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var lastTimestamp by remember { mutableStateOf("") }
-    var repeatCount by remember { mutableStateOf(0) }
     val context = LocalContext.current
     val lifecycle = (context as ComponentActivity).lifecycle
     val imageQueue = remember { ConcurrentLinkedQueue<Bitmap>() }
+    val idCounter = remember { IdCounter() }
 
     // Semaphore para limitar las corrutinas concurrentes a 4
     val semaphore = Semaphore(4)
@@ -68,8 +65,7 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> isPaused = false
-                Lifecycle.Event.ON_PAUSE -> isPaused = true
-                Lifecycle.Event.ON_DESTROY -> isPaused = true
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_DESTROY -> isPaused = true
                 else -> {}
             }
         }
@@ -93,20 +89,16 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
                                     val response = RetrofitClient.instance.getCameraResource(deviceId)
                                     Log.d("SecurityCameraScreen", "API Response: $response")
                                     cameraResponse = response
-                                    lastUpdateTime = System.currentTimeMillis()
 
                                     // Decodificación de imagen a resolución más baja
                                     val decodedBitmap = decodeBase64ToBitmap(response.guardar_fotografia, 200, 200)
                                     imageQueue.add(decodedBitmap)
 
-                                    // Check for repeated timestamps
-                                    val currentTimestamp = "${response.fecha} ${response.hora}"
-                                    if (currentTimestamp == lastTimestamp) {
-                                        repeatCount++
-                                    } else {
-                                        repeatCount = 0
+                                    // Handle ID counting logic
+                                    idCounter.receiveId(response.ID_Dispositivo) { id ->
+                                        // Handle the case when the same ID is received for 10 seconds
+                                        Log.d("SecurityCameraScreen", "ID $id received for 10 seconds")
                                     }
-                                    lastTimestamp = currentTimestamp
                                 }
                             }
                         }
@@ -132,10 +124,7 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
     }
 
     // Mostrar la interfaz de usuario basada en el estado actual de la cámara y las imágenes
-    val currentTime = System.currentTimeMillis()
-    val isCameraInactive = (currentTime - lastUpdateTime) > 5000 // Reducimos el tiempo de inactividad a 3 segundos
-
-    if (isCameraInactive || repeatCount > 3) {
+    if (idCounter.isCameraInactive()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -169,25 +158,15 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 bitmap?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.size(400.dp) // Se reduce el tamaño de la imagen en pantalla
-                    )
-                } ?: run {
-                    Text(text = "Cargando imagen...", color = Color.Gray)
+                    Box(
+                        modifier = Modifier
+                            .size(400.dp)
+                            .padding(16.dp)
+                    ) {
+                        DisplayImage(it)
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-
-                val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                val date = dateFormat.format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(response.fecha)!!)
-                val time = timeFormat.format(SimpleDateFormat("HH:mm:ss", Locale.getDefault()).parse(response.hora)!!)
-
-                Text(text = "Fecha: $date", color = Color.Black)
-                Text(text = "Hora: $time", color = Color.Black)
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -236,7 +215,6 @@ fun decodeBase64ToBitmap(base64Image: String, targetWidth: Int, targetHeight: In
     val options = BitmapFactory.Options().apply {
         inJustDecodeBounds = true
         BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, this)
-        // Escalado de la imagen para aún menor resolución
         inSampleSize = calculateInSampleSize(this, targetWidth, targetHeight)
         inJustDecodeBounds = false
     }
@@ -254,4 +232,60 @@ fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeig
         }
     }
     return inSampleSize
+}
+
+@Composable
+fun DisplayImage(bitmap: Bitmap) {
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = null,
+        modifier = Modifier.size(400.dp)
+    )
+}
+
+class IdCounter {
+    private var currentId: Int? = null
+    private var startTime: Long = 0
+    private val repeatCount = AtomicInteger(0)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    fun receiveId(newId: Int, onCountComplete: (Int) -> Unit) {
+        val currentTime = System.currentTimeMillis()
+
+        if (currentId == newId) {
+            if (currentTime - startTime >= 10000) {
+                onCountComplete(newId)
+                resetCounter()
+            }
+        } else {
+            resetCounter()
+            currentId = newId
+            startTime = currentTime
+            scope.launch {
+                while (true) {
+                    delay(1000)
+                    if (currentId == newId) {
+                        repeatCount.incrementAndGet()
+                        if (repeatCount.get() >= 10) {
+                            onCountComplete(newId)
+                            resetCounter()
+                        }
+                    } else {
+                        resetCounter()
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    fun isCameraInactive(): Boolean {
+        return repeatCount.get() >= 10
+    }
+
+    private fun resetCounter() {
+        currentId = null
+        startTime = 0
+        repeatCount.set(0)
+    }
 }

@@ -78,6 +78,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
     implementation("androidx.activity:activity-compose:1.4.0")
 
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
     implementation ("com.jakewharton.threetenabp:threetenabp:1.3.1")
 

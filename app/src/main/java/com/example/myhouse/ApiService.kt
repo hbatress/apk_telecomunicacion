@@ -17,6 +17,7 @@ data class Device(
     val NombreTipo: String
 )
 data class CameraResponse(
+    val ID_Dispositivo: Int,
     val guardar_fotografia: String,
     val fecha: String,
     val hora: String,
