@@ -123,6 +123,8 @@ fun AddScreen(modifier: Modifier = Modifier) {
                                     when (message) {
                                         "Dispositivo agregado correctamente" -> {
                                             Toast.makeText(context, "Dispositivo agregado correctamente", Toast.LENGTH_SHORT).show()
+                                            deviceName = ""
+                                            devicePassword = ""
                                         }
                                         else -> {
                                             Toast.makeText(context, "Error desconocido", Toast.LENGTH_SHORT).show()

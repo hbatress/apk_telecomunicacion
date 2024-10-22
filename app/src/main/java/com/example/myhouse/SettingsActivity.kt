@@ -10,9 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,50 +55,57 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    Box(
+    Column(
         modifier = modifier
             .background(Color(0xFFecf0f1))
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+        // Primera fila con el contenido existente
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
-            val userIcon: Painter = painterResource(id = R.drawable.ic_user) // Ensure this drawable exists
-            Image(
-                painter = userIcon,
-                contentDescription = "User Icon",
-                modifier = Modifier.size(100.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            userInfo.value?.let { user ->
-                Text(text = "Correo: ${user.correo}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Contraseña: ${user.contrasena}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Cantidad de dispositivos: ${user.cantidad_dispositivos}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            } ?: run {
-                Text(text = "Cargando información del usuario...", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    // Clear cache and user data
-                    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                    sharedPreferences.edit().clear().apply()
-                    Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
-                    // Redirect to login page
-                    val intent = Intent(context, MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    context.startActivity(intent)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(text = "Cerrar Sesión", color = Color.White)
+                val userIcon: Painter = painterResource(id = R.drawable.ic_user) // Asegúrate de que este drawable exista
+                Image(
+                    painter = userIcon,
+                    contentDescription = "User Icon",
+                    modifier = Modifier.size(100.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                userInfo.value?.let { user ->
+                    Text(text = "Correo: ${user.correo}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Contraseña: ${user.contrasena}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Cantidad de dispositivos: ${user.cantidad_dispositivos}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                } ?: run {
+                    Text(text = "Cargando información del usuario...", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        // Limpiar caché y datos del usuario
+                        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        sharedPreferences.edit().clear().apply()
+                        Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+                        // Redirigir a la página de inicio de sesión
+                        val intent = Intent(context, MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        context.startActivity(intent)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(text = "Cerrar Sesión", color = Color.White)
+                }
             }
         }
     }

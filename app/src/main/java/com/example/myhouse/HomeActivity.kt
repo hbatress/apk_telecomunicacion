@@ -1,5 +1,6 @@
 package com.example.myhouse
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,6 +12,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +34,12 @@ import com.example.myhouse.ui.theme.MyHouseTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class HomeViewModel : ViewModel() {
     private val _devices = MutableStateFlow<List<Device>>(emptyList())
@@ -120,6 +129,7 @@ fun ListSection(title: String, items: List<Device>, iconResId: Int) {
 @Composable
 fun ListItem(text: String, iconResId: Int, deviceId: Int, deviceType: String) {
     val context = LocalContext.current
+    val viewModel: HomeViewModel = viewModel()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -145,7 +155,45 @@ fun ListItem(text: String, iconResId: Int, deviceId: Int, deviceType: String) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = text, color = Color.Black)
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = {
+            val userId = getUserIdFromCache(context)?.toIntOrNull()
+            if (userId != null) {
+                com.example.myhouse.deleteDevice(context, userId, deviceId, onSuccess = {
+                    viewModel.fetchDevices(userId) // Update the list after deletion
+                }, onError = { errorMessage ->
+                    // Handle error
+                })
+            }
+        }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_delete),
+                contentDescription = "Eliminar dispositivo"
+            )
+        }
     }
+}
+
+fun deleteDevice(context: Context, userId: Int, deviceId: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    val jsonObject = JSONObject().apply {
+        put("ID_Dispositivo", deviceId)
+        put("ID_USER", userId)
+    }
+    val requestBody = jsonObject.toString().toRequestBody("application/json".toMediaTypeOrNull())
+
+    RetrofitClient.instance.deleteDevice(requestBody).enqueue(object : Callback<DeleteResponse> {
+        override fun onResponse(call: Call<DeleteResponse>, response: Response<DeleteResponse>) {
+            if (response.isSuccessful) {
+                onSuccess()
+            } else {
+                onError("Error: ${response.errorBody()?.string()}")
+            }
+        }
+
+        override fun onFailure(call: Call<DeleteResponse>, t: Throwable) {
+            onError("Network error: ${t.message}")
+        }
+    })
 }
 
 @Preview(showBackground = true)

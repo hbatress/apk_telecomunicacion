@@ -5,62 +5,31 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.Response
+import retrofit2.http.DELETE
+import okhttp3.RequestBody
+import retrofit2.http.Headers
+
+
+import retrofit2.http.HTTP
+
 
 data class RegisterRequest(val correo: String, val contrasena: String)
-data class RegisterResponse(
-    val message: String,
-    val id: Int
-)
-data class Device(
-    val ID_Dispositivo: Int,
-    val NombreDispositivo: String,
-    val NombreTipo: String
-)
-data class CameraResponse(
-    val ID_Dispositivo: Int,
-    val guardar_fotografia: String,
-    val fecha: String,
-    val hora: String,
-    val NombreDispositivo: String
-)
-
-data class UserInfo(
-    val correo: String,
-    val contrasena: String,
-    val cantidad_dispositivos: Int
-)
+data class RegisterResponse(val message: String, val id: Int)
+data class Device(val ID_Dispositivo: Int, val NombreDispositivo: String, val NombreTipo: String)
+data class CameraResponse(val ID_Dispositivo: Int, val guardar_fotografia: String, val fecha: String, val hora: String, val NombreDispositivo: String)
+data class UserInfo(val correo: String, val contrasena: String, val cantidad_dispositivos: Int)
 data class AddDeviceRequest(val userId: Int, val nombreDispositivo: String, val contrasenaDispositivo: String)
 data class AddDeviceResponse(val message: String)
-
-data class AirQualityResponse(
-    val indice_calidad_aire: Int,
-    val fecha: String,
-    val hora: String,
-    val NombreDispositivo: String
-)
-
-data class ErrorResponse(
+data class AirQualityResponse(val indice_calidad_aire: Int, val fecha: String, val hora: String, val NombreDispositivo: String)
+data class ErrorResponse(val message: String)
+data class TemperatureResponse(val temperatura: Double, val fecha: String, val hora: String, val NombreDispositivo: String)
+data class AirQualityAverageResponse(val fecha: String, val hora: Int, val promedio_calidad_aire: Double)
+data class TemperatureAverageResponse(val fecha: String, val hora: Int, val promedio_temperatura: Double)
+data class DeleteRequest(val ID_Dispositivo: Int, val ID_USER: Int)
+data class DeleteResponse(
     val message: String
 )
-
-data class TemperatureResponse(
-    val temperatura: Double,
-    val fecha: String,
-    val hora: String,
-    val NombreDispositivo: String
-)
-data class AirQualityAverageResponse(
-    val fecha: String,
-    val hora: Int,
-    val promedio_calidad_aire: Double
-)
-
-data class TemperatureAverageResponse(
-    val fecha: String,
-    val hora: Int,
-    val promedio_temperatura: Double
-)
-
 interface ApiService {
     @POST("/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
@@ -88,8 +57,11 @@ interface ApiService {
 
     @GET("promedio-calidad-aire/{userId}")
     fun getAirQualityAverage(@Path("userId") userId: Int): Call<List<AirQualityAverageResponse>>
+
     @GET("promedio-temperatura/{id}")
     fun getTemperatureAverage(@Path("id") userId: Int): Call<List<TemperatureAverageResponse>>
 
+    @HTTP(method = "DELETE", path = "/eliminar-recurso", hasBody = true)
+    fun deleteDevice(@Body request: RequestBody): Call<DeleteResponse>
 
 }
