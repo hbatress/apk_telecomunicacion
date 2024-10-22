@@ -48,6 +48,17 @@ data class TemperatureResponse(
     val hora: String,
     val NombreDispositivo: String
 )
+data class AirQualityAverageResponse(
+    val fecha: String,
+    val hora: Int,
+    val promedio_calidad_aire: Double
+)
+
+data class TemperatureAverageResponse(
+    val fecha: String,
+    val hora: Int,
+    val promedio_temperatura: Double
+)
 
 interface ApiService {
     @POST("/login")
@@ -73,4 +84,11 @@ interface ApiService {
 
     @GET("temperatura/{id}")
     fun getTemperature(@Path("id") userId: Int): Call<TemperatureResponse>
+
+    @GET("promedio-calidad-aire/{userId}")
+    fun getAirQualityAverage(@Path("userId") userId: Int): Call<List<AirQualityAverageResponse>>
+    @GET("promedio-temperatura/{id}")
+    fun getTemperatureAverage(@Path("id") userId: Int): Call<List<TemperatureAverageResponse>>
+
+
 }

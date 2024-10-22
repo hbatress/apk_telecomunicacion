@@ -133,7 +133,7 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
 
     // Mostrar la interfaz de usuario basada en el estado actual de la cámara y las imágenes
     val currentTime = System.currentTimeMillis()
-    val isCameraInactive = (currentTime - lastUpdateTime) > 3000 // Reducimos el tiempo de inactividad a 3 segundos
+    val isCameraInactive = (currentTime - lastUpdateTime) > 5000 // Reducimos el tiempo de inactividad a 3 segundos
 
     if (isCameraInactive || repeatCount > 3) {
         Column(
