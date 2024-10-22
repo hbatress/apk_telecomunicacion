@@ -21,11 +21,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.myhouse.ui.theme.MyHouseTheme
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.ui.Alignment
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,15 +65,26 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
             .fillMaxSize()
             .background(Color.White)
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "Register",
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp),
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
+        )
         OutlinedTextField(
             value = email.value,
             onValueChange = { email.value = it },
             label = { Text("Correo") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = 8.dp),
+            singleLine = true
         )
         OutlinedTextField(
             value = password.value,
@@ -86,7 +100,8 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                     Icon(imageVector = image, contentDescription = if (passwordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true
         )
         OutlinedTextField(
             value = confirmPassword.value,
@@ -102,7 +117,8 @@ fun RegisterScreen(modifier: Modifier = Modifier, onRegisterSuccess: () -> Unit)
                     Icon(imageVector = image, contentDescription = if (confirmPasswordVisible.value) "Ocultar contraseña" else "Mostrar contraseña")
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true
         )
         Button(
             onClick = {

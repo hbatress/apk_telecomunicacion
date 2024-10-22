@@ -19,11 +19,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.myhouse.ui.theme.MyHouseTheme
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
@@ -56,8 +59,18 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
             .fillMaxSize()
             .background(Color.White)
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "Login",
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
+        )
         OutlinedTextField(
             value = email.value,
             onValueChange = { email.value = it },

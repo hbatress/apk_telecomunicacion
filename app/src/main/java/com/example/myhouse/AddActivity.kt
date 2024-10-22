@@ -94,7 +94,8 @@ fun AddScreen(modifier: Modifier = Modifier) {
                 label = { Text("Nombre del dispositivo") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp)
+                    .padding(bottom = 8.dp),
+                singleLine = true
             )
             OutlinedTextField(
                 value = devicePassword,
@@ -109,7 +110,8 @@ fun AddScreen(modifier: Modifier = Modifier) {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(imageVector = image, contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña")
                     }
-                }
+                },
+                singleLine = true
             )
             Button(
                 onClick = {
