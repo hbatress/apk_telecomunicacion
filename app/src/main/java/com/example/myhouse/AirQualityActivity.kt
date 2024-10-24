@@ -140,7 +140,7 @@ fun AirQualityScreen(deviceId: Int, userId: Int) {
 @Composable
 fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAverageResponse>) {
     val maxAirQuality = averageData.maxByOrNull { it.promedio_calidad_aire }?.promedio_calidad_aire ?: 0.0
-    val yAxisMax = ((maxAirQuality + 20) / 20).toInt() * 20 // Round up to the nearest 20
+    val yAxisMax = ((maxAirQuality + 500) / 500).toInt() * 500 // Round up to the nearest 500
 
     // Parse and format the date
     val parsedDate = ZonedDateTime.parse(data.fecha)
@@ -148,13 +148,11 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
 
     // Determine the color based on the air quality index
     val boxColor = when (data.indice_calidad_aire) {
-        in 0..50 -> Color(0xFF00E400) // Green
-        in 51..100 -> Color(0xFFFFFF00) // Yellow
-        in 101..150 -> Color(0xFFFF7E00) // Orange
-        in 151..200 -> Color(0xFFFF0000) // Red
-        in 201..300 -> Color(0xFF8F3F97) // Purple
-        in 301..500 -> Color(0xFF7E0023) // Brown
-        else -> Color.LightGray // Default color
+        in 0..400 -> Color(0xFF00E400) // Green
+        in 401..1000 -> Color(0xFFFFFF00) // Yellow
+        in 1001..2000 -> Color(0xFFFF7E00) // Orange
+        in 2001..5000 -> Color(0xFFFF0000) // Red
+        else -> Color(0xFF7E0023) // Brown
     }
 
     // Custom function to determine if a color is light
@@ -220,7 +218,7 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
             }
 
             // Draw Y axis labels
-            for (i in 0..yAxisMax step 20) {
+            for (i in 0..yAxisMax step 500) {
                 val y = size.height - (i / yAxisMax.toFloat() * size.height)
                 drawContext.canvas.nativeCanvas.drawText(
                     i.toString(),
@@ -283,22 +281,17 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
                 .background(color = boxColor, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                horizontalAlignment = Alignment.Start
             ) {
-                Column(
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(text = "Fecha: $formattedDate", fontSize = 20.sp, color = textColor)
-                    Text(text = "Hora: ${data.hora}", fontSize = 20.sp, color = textColor)
-                }
+                Text(text = "Fecha: $formattedDate", fontSize = 20.sp, color = textColor)
+                Text(text = "Hora: ${data.hora}", fontSize = 20.sp, color = textColor)
                 Text(
-                    text = "${data.indice_calidad_aire}",
+                    text = "${data.indice_calidad_aire} ppm",
                     fontSize = 48.sp, // Larger font size
                     fontWeight = FontWeight.Bold, // Bold text
                     color = textColor,
-                    modifier = Modifier.align(Alignment.CenterVertically)
+                    modifier = Modifier.padding(top = 8.dp) // Add some padding to separate from the above text
                 )
             }
         }

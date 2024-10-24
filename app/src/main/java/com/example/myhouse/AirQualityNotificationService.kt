@@ -57,24 +57,21 @@ class AirQualityNotificationService : Service() {
 
     private fun getAirQualityRange(index: Int): Int {
         return when (index) {
-            in 0..50 -> 0
-            in 51..100 -> 1
-            in 101..150 -> 2
-            in 151..200 -> 3
-            in 201..300 -> 4
-            in 301..500 -> 5
-            else -> -1
+            in 0..400 -> 0
+            in 401..1000 -> 1
+            in 1001..2000 -> 2
+            in 2001..5000 -> 3
+            else -> 4
         }
     }
 
     private fun sendNotification(range: Int, index: Int) {
         val (color, description) = when (range) {
-            0 -> Pair("#00E400", "Buena")
-            1 -> Pair("#FFFF00", "Moderada")
-            2 -> Pair("#FF7E00", "No Saludable para Grupos Sensibles")
-            3 -> Pair("#FF0000", "No Saludable")
-            4 -> Pair("#8F3F97", "Muy No Saludable")
-            5 -> Pair("#7E0023", "Peligrosa")
+            0 -> Pair("#00E400", "Niveles normales de CO2 en el aire exterior")
+            1 -> Pair("#FFFF00", "Niveles aceptables en espacios interiores")
+            2 -> Pair("#FF7E00", "Niveles moderadamente elevados")
+            3 -> Pair("#FF0000", "Niveles altos")
+            4 -> Pair("#7E0023", "Niveles peligrosos")
             else -> return
         }
 
