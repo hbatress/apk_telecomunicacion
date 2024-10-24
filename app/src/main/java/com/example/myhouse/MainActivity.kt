@@ -1,12 +1,16 @@
 package com.example.myhouse
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -31,8 +35,19 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d("MainActivity", "Permission granted")
+        } else {
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -47,6 +62,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Verificar y solicitar permisos
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 }
 
@@ -56,7 +78,7 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
     val password = remember { mutableStateOf("") }
     val passwordVisible = remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val keyboardController = LocalSoftwareKeyboardController.current // Controlador de teclado
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = modifier
@@ -83,10 +105,10 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
             keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Next // Acción de teclado
+                imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
-                onNext = { /* Cerrar teclado al presionar Enter */ keyboardController?.hide() }
+                onNext = { keyboardController?.hide() }
             )
         )
         OutlinedTextField(
@@ -104,12 +126,10 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                 }
             },
             keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Done // Acción de teclado
+                imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide() // Cerrar teclado al presionar Enter
-                }
+                onDone = { keyboardController?.hide() }
             )
         )
         Button(
@@ -120,14 +140,21 @@ fun LoginScreen(modifier: Modifier = Modifier, onLoginSuccess: () -> Unit) {
                         RetrofitClient.instance.login(request).enqueue(object : Callback<LoginResponse> {
                             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                                 Log.d("LoginResponse", "Response: ${response.body()}")
-                                Log.d("LoginResponse", "Response Code: ${response.code()}")
-                                Log.d("LoginResponse", "Response Message: ${response.message()}")
                                 if (response.isSuccessful) {
                                     val message = response.body()?.message
                                     val id = response.body()?.id
                                     if (message == "Usuario correcto" && id != null) {
+                                        // Guardar el ID del usuario en caché o preferencia
                                         saveUserIdToCache(context, id.toString())
                                         Toast.makeText(context, "Verificado", Toast.LENGTH_SHORT).show()
+
+                                        // Iniciar el servicio AirQualityTemperatureService con el userId
+                                        val intent = Intent(context, AirQualityTemperatureService::class.java).apply {
+                                            putExtra("userId", id.toString())
+                                        }
+                                        context.startService(intent)
+
+                                        // Llamar a la función de éxito de login
                                         onLoginSuccess()
                                     } else {
                                         Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_SHORT).show()

@@ -1,7 +1,6 @@
 package com.example.myhouse
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -42,7 +41,7 @@ class AirQualityActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            startAirQualityService()
+            // Handle permission granted case
         }
     }
 
@@ -67,21 +66,15 @@ class AirQualityActivity : ComponentActivity() {
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    startAirQualityService()
+                    // Handle permission granted case
                 }
                 else -> {
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
         } else {
-            startAirQualityService()
+            // Handle case for older Android versions
         }
-    }
-
-    private fun startAirQualityService() {
-        val intent = Intent(this, AirQualityNotificationService::class.java)
-        intent.putExtra("USER_ID", 1) // Pass the user ID as needed
-        startService(intent)
     }
 }
 

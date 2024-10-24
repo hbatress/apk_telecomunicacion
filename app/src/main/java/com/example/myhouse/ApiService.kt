@@ -31,9 +31,11 @@ data class DeleteResponse(
     val message: String
 )
 
-data class NewAirQualityResponse(
-    val indice_calidad_aire: Int
-)
+
+
+data class NewTemperatureResponse(val temperatura: Double)
+
+data class NewAirQualityResponse(val indice_calidad_aire: Int)
 
 data class ImageRequest(val userId: Int, val deviceId: Int)
 data class ImageResponse(val image: String)
@@ -77,7 +79,10 @@ interface ApiService {
     @GET("estado-camara/{id}")
     fun getCameraStatus(@Path("id") deviceId: Int): Call<CameraStatusResponse>
 
-    @GET("/ver-calidad-aire/{userId}")
-    fun getAirQuality1(@Path("userId") userId: Int): Call<NewAirQualityResponse>
+    @GET("ver-calidad-aire/{id}")
+    fun fetchAirQuality(@Path("id") id: Int): Call<NewAirQualityResponse>
+
+    @GET("ver-temperatura/{id}")
+    fun fetchTemperature(@Path("id") id: Int): Call<NewTemperatureResponse>
 
 }
