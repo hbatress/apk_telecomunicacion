@@ -1,5 +1,6 @@
 package com.example.myhouse
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -8,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -87,14 +89,25 @@ class AirQualityNotificationService : Service() {
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_air_quality)
-            .setContentTitle("Air Quality Alert")
-            .setContentText("Air Quality is $description (Index: $index)")
+            .setContentTitle("Alerta de Calidad del Aire")
+            .setContentText("Calidad de Aire: $description (con nivel de $index)")
             .setColor(android.graphics.Color.parseColor(color))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            NotificationManagerCompat.from(this).notify(range, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                    NotificationManagerCompat.from(this).notify(range, notification)
+                } else {
+                    // Handle the case where permission is not granted
+                    Log.e("AirQualityNotificationService", "Permission not granted for posting notifications")
+                }
+            } else {
+                NotificationManagerCompat.from(this).notify(range, notification)
+            }
+        } catch (e: SecurityException) {
+            Log.e("AirQualityNotificationService", "SecurityException: ${e.message}")
         }
     }
 

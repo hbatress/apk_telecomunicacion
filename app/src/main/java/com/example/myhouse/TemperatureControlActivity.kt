@@ -26,7 +26,6 @@ import retrofit2.Callback
 import retrofit2.Response
 import androidx.compose.ui.graphics.nativeCanvas
 import android.graphics.Paint
-import androidx.compose.ui.graphics.luminance
 import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -107,6 +106,9 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
     // Parse and format the date
     val parsedDate = ZonedDateTime.parse(data.fecha)
     val formattedDate = parsedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+
+    // Determine the background color based on the temperature
+    val backgroundColor = getBackgroundColor(data.temperatura)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -223,7 +225,7 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .padding(8.dp)
-                .background(color = Color.LightGray, shape = RoundedCornerShape(16.dp))
+                .background(color = backgroundColor, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp)
         ) {
             Row(
@@ -245,6 +247,18 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
                 )
             }
         }
+    }
+}
+
+fun getBackgroundColor(temperature: Double): Color {
+    return when {
+        temperature <= 0 -> Color(0xFFADD8E6) // Light Blue
+        temperature in 1.0..10.0 -> Color(0xFF0000FF) // Blue
+        temperature in 11.0..20.0 -> Color(0xFF90EE90) // Light Green
+        temperature in 21.0..30.0 -> Color(0xFFFFFFE0) // Light Yellow
+        temperature in 31.0..40.0 -> Color(0xFFFFA07A) // Light Orange
+        temperature in 41.0..50.0 -> Color(0xFFFF4500) // Orange Red
+        else -> Color(0xFF8B0000) // Dark Red
     }
 }
 

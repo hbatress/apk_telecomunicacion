@@ -30,6 +30,9 @@ data class DeleteRequest(val ID_Dispositivo: Int, val ID_USER: Int)
 data class DeleteResponse(
     val message: String
 )
+data class ImageRequest(val userId: Int, val deviceId: Int)
+data class ImageResponse(val image: String)
+data class CameraStatusResponse(val estado: String)
 interface ApiService {
     @POST("/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
@@ -63,5 +66,11 @@ interface ApiService {
 
     @HTTP(method = "DELETE", path = "/eliminar-recurso", hasBody = true)
     fun deleteDevice(@Body request: RequestBody): Call<DeleteResponse>
+    @POST("ver-imagen")
+    fun getImage(@Body request: ImageRequest): Call<ImageResponse>
+
+    @GET("estado-camara/{id}")
+    fun getCameraStatus(@Path("id") deviceId: Int): Call<CameraStatusResponse>
+
 
 }

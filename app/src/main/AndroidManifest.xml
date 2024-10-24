@@ -31,6 +31,10 @@
         <activity android:name=".SecurityCameraActivity" android:exported="true" />
         <activity android:name=".TemperatureControlActivity" android:exported="true" />
         <activity android:name=".AirQualityActivity" android:exported="true" />
-
+        <service android:name=".AirQualityNotificationService" />
+        <service
+            android:name=".TemperatureMonitorService"
+            android:exported="true"
+            android:foregroundServiceType="location" />
     </application>
 </manifest>

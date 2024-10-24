@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Environment
+import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,52 +16,65 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
-import android.util.Base64
-import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.ConcurrentLinkedQueue
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import java.util.concurrent.atomic.AtomicInteger
+import androidx.compose.ui.draw.clip
 
 class SecurityCameraActivity : ComponentActivity() {
+    private val apiService = RetrofitClient.instance
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
+        val deviceName = intent.getStringExtra("DEVICE_NAME") ?: "Camara de Seguridad"
         val userId = getUserIdFromCache(this)?.toIntOrNull()
 
-        // Iniciar la UI composable
+        // Check camera status before entering the screen
+        checkCameraStatus(deviceId)
+
         setContent {
-            SecurityCameraScreen(deviceId, userId)
+            SecurityCameraScreen(deviceId, deviceName, userId, apiService)
+        }
+    }
+
+    private fun checkCameraStatus(deviceId: Int) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = apiService.getCameraStatus(deviceId).execute()
+                if (response.isSuccessful) {
+                    val status = response.body()?.estado
+                    if (status == "encendida") {
+                        Log.d("SecurityCameraActivity", "Camera is on")
+                    } else {
+                        Log.d("SecurityCameraActivity", "Camera is off")
+                    }
+                } else {
+                    Log.e("SecurityCameraActivity", "Error checking camera status: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Log.e("SecurityCameraActivity", "Error checking camera status", e)
+            }
         }
     }
 }
 
 @Composable
-fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
-    var cameraResponse by remember { mutableStateOf<CameraResponse?>(null) }
+fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiService: ApiService) {
+    var cameraResponse by remember { mutableStateOf<ImageResponse?>(null) }
     var isPaused by remember { mutableStateOf(false) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var cameraStatus by remember { mutableStateOf("encendida") }
     val context = LocalContext.current
     val lifecycle = (context as ComponentActivity).lifecycle
-    val imageQueue = remember { ConcurrentLinkedQueue<Bitmap>() }
-    val idCounter = remember { IdCounter() }
-
-    // Semaphore para limitar las corrutinas concurrentes a 4
-    val semaphore = Semaphore(4)
 
     DisposableEffect(deviceId) {
         val observer = LifecycleEventObserver { _, event ->
@@ -82,156 +97,138 @@ fun SecurityCameraScreen(deviceId: Int, userId: Int?) {
             while (true) {
                 if (!isPaused) {
                     try {
-                        // Ejecutar hasta 4 solicitudes en paralelo usando el semáforo
-                        repeat(4) {
-                            scope.launch {
-                                semaphore.withPermit {
-                                    val response = RetrofitClient.instance.getCameraResource(deviceId)
-                                    Log.d("SecurityCameraScreen", "API Response: $response")
-                                    cameraResponse = response
-
-                                    // Decodificación de imagen a resolución más baja
-                                    val decodedBitmap = decodeBase64ToBitmap(response.guardar_fotografia, 200, 200)
-                                    imageQueue.add(decodedBitmap)
-
-                                    // Handle ID counting logic
-                                    idCounter.receiveId(response.ID_Dispositivo) { id ->
-                                        // Handle the case when the same ID is received for 10 seconds
-                                        Log.d("SecurityCameraScreen", "ID $id received for 10 seconds")
-                                    }
+                        val response = apiService.getImage(ImageRequest(userId ?: 1, deviceId)).execute()
+                        if (response.isSuccessful) {
+                            cameraResponse = response.body()
+                            cameraResponse?.let {
+                                // Preprocess the image in a separate coroutine
+                                withContext(Dispatchers.Default) {
+                                    bitmap = decodeBase64ToBitmap(it.image, 200, 200)
                                 }
                             }
+                        } else {
+                            Log.e("SecurityCameraScreen", "Error fetching image: ${response.errorBody()?.string()}")
                         }
                     } catch (e: Exception) {
-                        Log.e("SecurityCameraScreen", "Error fetching camera resource", e)
+                        Log.e("SecurityCameraScreen", "Error fetching image", e)
                     }
                 }
-                delay(1000) // Espera de 1 segundo antes de la siguiente solicitud
+                delay(500) // Adjusted delay to 500 milliseconds
             }
         }
-    }
 
-    // Tarea en segundo plano para procesar la cola de imágenes
-    LaunchedEffect(deviceId, isPaused) {
-        context.lifecycleScope.launch {
+        // Check camera status every 3 seconds
+        scope.launch {
             while (true) {
-                if (imageQueue.isNotEmpty()) {
-                    bitmap = imageQueue.poll()
+                try {
+                    val response = apiService.getCameraStatus(deviceId).execute()
+                    if (response.isSuccessful) {
+                        val status = response.body()?.estado
+                        if (status == "encendida") {
+                            cameraStatus = "encendida"
+                            Log.d("SecurityCameraScreen", "Camera is on")
+                        } else {
+                            cameraStatus = "desconectada"
+                            Log.d("SecurityCameraScreen", "Camera is off")
+                        }
+                    } else {
+                        cameraStatus = "desconectada"
+                        Log.e("SecurityCameraScreen", "Error checking camera status: ${response.errorBody()?.string()}")
+                    }
+                } catch (e: Exception) {
+                    cameraStatus = "desconectada"
+                    Log.e("SecurityCameraScreen", "Error checking camera status", e)
                 }
-                delay(50) // Actualización más rápida del bitmap
+                delay(3000) // Check every 3 seconds
             }
         }
     }
 
-    // Mostrar la interfaz de usuario basada en el estado actual de la cámara y las imágenes
-    if (idCounter.isCameraInactive()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Cámara desconectada",
-                color = Color.Red,
-                textAlign = TextAlign.Center,
-                fontSize = 24.sp
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = deviceName,
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        if (cameraStatus == "desconectada") {
             Image(
-                painter = painterResource(id = R.drawable.desconectar), // Replace with your disconnected icon resource
+                painter = painterResource(id = R.drawable.desconectar), // Replace with your actual icon resource
                 contentDescription = null,
-                modifier = Modifier.size(100.dp)
+                modifier = Modifier.size(64.dp)
             )
-        }
-    } else {
-        cameraResponse?.let { response ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = response.NombreDispositivo,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                bitmap?.let {
-                    Box(
-                        modifier = Modifier
-                            .size(400.dp)
-                            .padding(16.dp)
-                    ) {
-                        DisplayImage(it)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Cámara desconectada o fuera de servicio",
+                color = Color.Red,
+                textAlign = TextAlign.Center
+            )
+        } else {
+            cameraResponse?.let {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Button(
-                        onClick = {
-                            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                            val file = File(downloadsDir, "camera_image_${System.currentTimeMillis()}.jpg")
-                            FileOutputStream(file).use { out ->
-                                bitmap?.compress(Bitmap.CompressFormat.JPEG, 70, out) // Compresión ajustada
-                            }
-                            Toast.makeText(context, "Imagen guardada", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .weight(1f)
-                    ) {
-                        Text(text = "Guardar Imagen", color = Color.White)
+                    bitmap?.let {
+                        Box(
+                            modifier = Modifier
+                                .size(500.dp) // Increased size
+                                .padding(16.dp)
+                        ) {
+                            DisplayImage(it)
+                        }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = {
-                            isPaused = !isPaused
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (isPaused) Color.Green else Color.Red),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Text(text = if (isPaused) "Encender" else "Apagar", color = Color.White)
+                        Button(
+                            onClick = {
+                                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                                val file = File(downloadsDir, "camera_image_${System.currentTimeMillis()}.jpg")
+                                FileOutputStream(file).use { out ->
+                                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 70, out)
+                                }
+                                Toast.makeText(context, "Imagen guardada", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .weight(1f)
+                        ) {
+                            Text(text = "Guardar Imagen", color = Color.White)
+                        }
+
+                        Button(
+                            onClick = {
+                                isPaused = !isPaused
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = if (isPaused) Color.Green else Color.Red),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .weight(1f)
+                        ) {
+                            Text(text = if (isPaused) "Encender" else "Apagar", color = Color.White)
+                        }
                     }
                 }
+            } ?: run {
+                Text(text = "Cargando...", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
             }
-        } ?: run {
-            Text(text = "Cargando...", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
         }
     }
-}
-
-fun decodeBase64ToBitmap(base64Image: String, targetWidth: Int, targetHeight: Int): Bitmap {
-    val imageBytes = Base64.decode(base64Image, Base64.DEFAULT)
-    val options = BitmapFactory.Options().apply {
-        inJustDecodeBounds = true
-        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, this)
-        inSampleSize = calculateInSampleSize(this, targetWidth, targetHeight)
-        inJustDecodeBounds = false
-    }
-    return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
-}
-
-fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-    val (height: Int, width: Int) = options.outHeight to options.outWidth
-    var inSampleSize = 1
-    if (height > reqHeight || width > reqWidth) {
-        val halfHeight: Int = height / 2
-        val halfWidth: Int = width / 2
-        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-            inSampleSize *= 2
-        }
-    }
-    return inSampleSize
 }
 
 @Composable
@@ -239,53 +236,13 @@ fun DisplayImage(bitmap: Bitmap) {
     Image(
         bitmap = bitmap.asImageBitmap(),
         contentDescription = null,
-        modifier = Modifier.size(400.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp)) // Apply semi-rounded corners
     )
 }
 
-class IdCounter {
-    private var currentId: Int? = null
-    private var startTime: Long = 0
-    private val repeatCount = AtomicInteger(0)
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-    fun receiveId(newId: Int, onCountComplete: (Int) -> Unit) {
-        val currentTime = System.currentTimeMillis()
-
-        if (currentId == newId) {
-            if (currentTime - startTime >= 10000) {
-                onCountComplete(newId)
-                resetCounter()
-            }
-        } else {
-            resetCounter()
-            currentId = newId
-            startTime = currentTime
-            scope.launch {
-                while (true) {
-                    delay(1000)
-                    if (currentId == newId) {
-                        repeatCount.incrementAndGet()
-                        if (repeatCount.get() >= 10) {
-                            onCountComplete(newId)
-                            resetCounter()
-                        }
-                    } else {
-                        resetCounter()
-                        break
-                    }
-                }
-            }
-        }
-    }
-
-    fun isCameraInactive(): Boolean {
-        return repeatCount.get() >= 10
-    }
-
-    private fun resetCounter() {
-        currentId = null
-        startTime = 0
-        repeatCount.set(0)
-    }
+fun decodeBase64ToBitmap(base64Str: String, width: Int, height: Int): Bitmap {
+    val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
+    return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
 }
