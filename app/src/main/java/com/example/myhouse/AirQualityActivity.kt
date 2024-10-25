@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -155,6 +157,15 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
 
     // Determine the text color based on the background color
     val textColor = if (isColorLight(boxColor)) Color.Black else Color.White
+
+    // Determine the image resource ID based on the air quality index
+    val imageResId = when (data.indice_calidad_aire) {
+        in 0..400 -> R.drawable.ic_air_quality_good
+        in 401..1000 -> R.drawable.ic_air_quality_moderate
+        in 1001..2000 -> R.drawable.ic_air_quality_unhealthy
+        in 2001..5000 -> R.drawable.ic_air_quality_very_unhealthy
+        else -> R.drawable.ic_air_quality_hazardous
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -301,6 +312,14 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
                     modifier = Modifier
                         .padding(top = 8.dp) // Add some padding to separate from the above text
                         .wrapContentSize()
+                )
+                Image(
+                    painter = painterResource(id = imageResId),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(250.dp) // Adjust the size as needed
+                        .padding(top = 8.dp) // Add some padding to separate from the above text.
+                        .align(Alignment.CenterHorizontally)
                 )
             }
         }

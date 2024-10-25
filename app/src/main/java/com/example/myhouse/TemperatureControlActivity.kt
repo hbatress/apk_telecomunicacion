@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,7 +33,6 @@ import retrofit2.Callback
 import retrofit2.Response
 import androidx.compose.ui.graphics.nativeCanvas
 import android.graphics.Paint
-import androidx.compose.ui.graphics.luminance
 import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -273,16 +274,25 @@ fun TemperatureContent(data: TemperatureResponse, averageData: List<TemperatureA
                 .background(color = backgroundColor, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    modifier = Modifier.wrapContentSize()
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "Fecha: $formattedDate", fontSize = 20.sp, color = Color.Black)
-                    Text(text = "Hora: ${data.hora}", fontSize = 20.sp, color = Color.Black)
+                    Column {
+                        Text(
+                            text = formattedDate,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = data.hora,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
                 }
                 Text(
                     text = "${data.temperatura}°C",
@@ -290,9 +300,22 @@ fun TemperatureContent(data: TemperatureResponse, averageData: List<TemperatureA
                     fontWeight = FontWeight.Bold, // Bold text
                     color = Color.Black,
                     modifier = Modifier
-                        .align(Alignment.CenterVertically)
+                        .align(Alignment.CenterHorizontally)
                         .wrapContentSize()
                 )
+
+                Spacer(modifier = Modifier.height(16.dp)) // Add space between the text and the icons
+
+                // Icons for temperature ranges
+                val iconResId = when (data.temperatura) {
+                    in 0.0..10.0 -> R.drawable.ic_temp_0_10
+                    in 10.1..20.0 -> R.drawable.ic_temp_10_20
+                    in 20.1..30.0 -> R.drawable.ic_temp_20_30
+                    in 30.1..40.0 -> R.drawable.ic_temp_30_40
+                    in 40.1..50.0 -> R.drawable.ic_temp_40_50
+                    else -> R.drawable.ic_temperature
+                }
+                Image(painter = painterResource(id = iconResId), contentDescription = "${data.temperatura}°C")
             }
         }
     }
