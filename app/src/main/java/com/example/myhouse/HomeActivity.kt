@@ -3,23 +3,24 @@ package com.example.myhouse
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,18 +57,48 @@ class HomeViewModel : ViewModel() {
 }
 
 class HomeActivity : ComponentActivity() {
+    private var backPressedTime: Long = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false) // Ensure content extends into system bars
         setContent {
             MyHouseTheme {
                 BaseLayout(showFooter = true, currentPage = "Inicio") { innerPadding ->
-                    Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                                            finishAffinity() // Exit the application
+                                        } else {
+                                            Toast.makeText(this@HomeActivity, "Press again to exit", Toast.LENGTH_SHORT).show()
+                                        }
+                                        backPressedTime = System.currentTimeMillis()
+                                    }
+                                )
+                            }
+                    ) {
                         HomeScreen(modifier = Modifier.weight(1f))
                     }
                 }
             }
         }
+
+        // Handle the back button using OnBackPressedDispatcher
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                    finishAffinity() // Exit the application
+                } else {
+                    Toast.makeText(this@HomeActivity, "Presione nuevamente para salir", Toast.LENGTH_SHORT).show()
+                }
+                backPressedTime = System.currentTimeMillis()
+            }
+        })
     }
 }
 
@@ -162,7 +193,7 @@ fun ListItem(text: String, iconResId: Int, deviceId: Int, deviceType: String) {
                 .clickable {
                     val userId = getUserIdFromCache(context)?.toIntOrNull()
                     if (userId != null) {
-                        com.example.myhouse.deleteDevice(context, userId, deviceId, onSuccess = {
+                        deleteDevice(context, userId, deviceId, onSuccess = {
                             viewModel.fetchDevices(userId) // Update the list after deletion
                         }, onError = { errorMessage ->
                             // Handle error

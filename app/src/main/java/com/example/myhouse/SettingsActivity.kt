@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,6 +38,15 @@ class SettingsActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Manejar el botón de retroceso usando OnBackPressedDispatcher
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val intent = Intent(this@SettingsActivity, HomeActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
+        })
     }
 }
 
