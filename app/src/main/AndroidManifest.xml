@@ -38,6 +38,8 @@
         <activity android:name=".TemperatureControlActivity" android:exported="true" />
         <activity android:name=".AirQualityActivity" android:exported="true" />
 
+        <!-- LoginActivity -->
+        <activity android:name=".LoginActivity" />
 
         <!-- Add the service declaration here -->
         <service
