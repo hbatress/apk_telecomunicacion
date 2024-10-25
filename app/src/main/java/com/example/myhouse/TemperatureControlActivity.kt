@@ -151,14 +151,21 @@ fun TemperatureContent(data: TemperatureResponse, averageData: List<TemperatureA
             .padding(16.dp)
     ) {
         // Título: Nombre del dispositivo
-        Text(
-            text = data.NombreDispositivo,
-            fontSize = 32.sp,
-            style = MaterialTheme.typography.headlineSmall,
+        Box(
             modifier = Modifier
-                .padding(bottom = 16.dp)
-                .wrapContentSize()
-        )
+                .background(color = Color(0xFF6200EE), shape = RoundedCornerShape(8.dp))
+                .padding(8.dp) // Reduced padding
+        ) {
+            Text(
+                text = data.NombreDispositivo,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(4.dp) // Reduced padding
+                    .wrapContentSize()
+            )
+        }
 
         // Gráfica de promedio de temperatura
         Canvas(modifier = Modifier
@@ -281,13 +288,13 @@ fun TemperatureContent(data: TemperatureResponse, averageData: List<TemperatureA
                 ) {
                     Column {
                         Text(
-                            text = formattedDate,
+                            text = "Fecha: $formattedDate",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
                         Text(
-                            text = data.hora,
+                            text = "Hora: ${data.hora}",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black

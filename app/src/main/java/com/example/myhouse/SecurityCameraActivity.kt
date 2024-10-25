@@ -10,14 +10,17 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -27,7 +30,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
-import androidx.compose.ui.draw.clip
+import java.text.SimpleDateFormat
+import java.util.*
+import retrofit2.Response
 
 class SecurityCameraActivity : ComponentActivity() {
     private val apiService = RetrofitClient.instance
@@ -49,7 +54,7 @@ class SecurityCameraActivity : ComponentActivity() {
     private fun checkCameraStatus(deviceId: Int) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = apiService.getCameraStatus(deviceId).execute()
+                val response: Response<CameraStatusResponse> = withContext(Dispatchers.IO) { apiService.getCameraStatus(deviceId).execute() }
                 if (response.isSuccessful) {
                     val status = response.body()?.estado
                     if (status == "encendida") {
@@ -73,6 +78,7 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
     var isPaused by remember { mutableStateOf(false) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var cameraStatus by remember { mutableStateOf("encendida") }
+    var currentDateTime by remember { mutableStateOf("") }
     val context = LocalContext.current
     val lifecycle = (context as ComponentActivity).lifecycle
 
@@ -97,11 +103,10 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
             while (true) {
                 if (!isPaused) {
                     try {
-                        val response = apiService.getImage(ImageRequest(userId ?: 1, deviceId)).execute()
+                        val response: Response<ImageResponse> = withContext(Dispatchers.IO) { apiService.getImage(ImageRequest(userId ?: 1, deviceId)).execute() }
                         if (response.isSuccessful) {
                             cameraResponse = response.body()
                             cameraResponse?.let {
-                                // Preprocess the image in a separate coroutine
                                 withContext(Dispatchers.Default) {
                                     bitmap = decodeBase64ToBitmap(it.image, 200, 200)
                                 }
@@ -121,7 +126,7 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
         scope.launch {
             while (true) {
                 try {
-                    val response = apiService.getCameraStatus(deviceId).execute()
+                    val response: Response<CameraStatusResponse> = withContext(Dispatchers.IO) { apiService.getCameraStatus(deviceId).execute() }
                     if (response.isSuccessful) {
                         val status = response.body()?.estado
                         if (status == "encendida") {
@@ -142,6 +147,15 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
                 delay(3000) // Check every 3 seconds
             }
         }
+
+        // Update date and time every second
+        scope.launch {
+            while (true) {
+                val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+                currentDateTime = sdf.format(Date())
+                delay(1000)
+            }
+        }
     }
 
     Column(
@@ -154,7 +168,12 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
         Text(
             text = deviceName,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
+            color = Color.White, // Text color
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .background(Color(0xFF6200EE)) // Background color
+                .border(2.dp, Color(0xFF3700B3), RoundedCornerShape(8.dp)) // Border
+                .padding(8.dp) // Padding inside the border
         )
 
         if (cameraStatus == "desconectada") {
@@ -182,11 +201,27 @@ fun SecurityCameraScreen(deviceId: Int, deviceName: String, userId: Int?, apiSer
                             modifier = Modifier
                                 .size(500.dp) // Increased size
                                 .padding(16.dp)
+                                .clip(RoundedCornerShape(16.dp)) // Apply rounded corners
                         ) {
                             DisplayImage(it)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFBBDEFB)), // Light blue background
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .border(2.dp, Color.Blue, RoundedCornerShape(8.dp)) // Border
+                    ) {
+                        Text(
+                            text = "Fecha: Hora: $currentDateTime",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Blue,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
