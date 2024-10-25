@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Estilos de la aplicación -->
+    <style name="CustomTextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="android:textColor">@color/black</item> <!-- Color del texto -->
+        <item name="android:backgroundTint">@color/white</item> <!-- Color de fondo del campo de entrada -->
+        <item name="hintTextColor">@color/gray</item>
+        <item name="boxStrokeColor">@color/black</item>
+        <item name="hintTextAppearance">@style/HintTextAppearance</item>
+    </style>
+
+    <style name="HintTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textColor">@color/gray</item>
+    </style>
+
+</resources>
