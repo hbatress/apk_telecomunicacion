@@ -1,9 +1,13 @@
 package com.example.myhouse
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.core.content.ContextCompat
 import com.example.myhouse.ui.theme.MyHouseTheme
 import kotlinx.coroutines.delay
 import retrofit2.Call
@@ -26,28 +31,55 @@ import retrofit2.Callback
 import retrofit2.Response
 import androidx.compose.ui.graphics.nativeCanvas
 import android.graphics.Paint
+import androidx.compose.ui.graphics.luminance
 import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 class TemperatureControlActivity : ComponentActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // Handle permission granted case
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deviceId = intent.getIntExtra("DEVICE_ID", -1)
         val userId = getUserIdFromCache(this)?.toIntOrNull()
+
         setContent {
             MyHouseTheme {
                 if (userId != null) {
-                    TemperatureControl2Screen(deviceId, userId)
+                    TemperatureControlScreen(deviceId, userId)
                 } else {
                     Text(text = "User ID not found")
                 }
             }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // Handle permission granted case
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            // Handle case for older Android versions
+        }
     }
 }
 
 @Composable
-fun TemperatureControl2Screen(deviceId: Int, userId: Int) {
+fun TemperatureControlScreen(deviceId: Int, userId: Int) {
     var temperatureData by remember { mutableStateOf<TemperatureResponse?>(null) }
     var temperatureAverageData by remember { mutableStateOf<List<TemperatureAverageResponse>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -65,7 +97,7 @@ fun TemperatureControl2Screen(deviceId: Int, userId: Int) {
                 }
 
                 override fun onFailure(call: Call<TemperatureResponse>, t: Throwable) {
-                    Log.e("TemperatureControl2Screen", "Error: ${t.message}")
+                    Log.e("TemperatureControlScreen", "Error: ${t.message}")
                     errorMessage = "Error en la solicitud"
                 }
             })
@@ -80,17 +112,17 @@ fun TemperatureControl2Screen(deviceId: Int, userId: Int) {
                 }
 
                 override fun onFailure(call: Call<List<TemperatureAverageResponse>>, t: Throwable) {
-                    Log.e("TemperatureControl2Screen", "Error: ${t.message}")
+                    Log.e("TemperatureControlScreen", "Error: ${t.message}")
                     errorMessage = "Error en la solicitud"
                 }
             })
 
-            delay(5000) // Delay for 5 seconds before making the next request
+            delay(2000) // Delay for 2 seconds before making the next request
         }
     }
 
     if (temperatureData != null && temperatureAverageData != null) {
-        TemperatureContent2(temperatureData!!, temperatureAverageData!!)
+        TemperatureContent(temperatureData!!, temperatureAverageData!!)
     } else if (errorMessage != null) {
         Text(text = errorMessage!!)
     } else {
@@ -99,27 +131,40 @@ fun TemperatureControl2Screen(deviceId: Int, userId: Int) {
 }
 
 @Composable
-fun TemperatureContent2(data: TemperatureResponse, averageData: List<TemperatureAverageResponse>) {
+fun TemperatureContent(data: TemperatureResponse, averageData: List<TemperatureAverageResponse>) {
     val maxTemperature = averageData.maxByOrNull { it.promedio_temperatura }?.promedio_temperatura ?: 0.0
-    val yAxisMax = ((maxTemperature + 5) / 5).toInt() * 5 // Round up to the nearest 5
+    val yAxisMax = ((maxTemperature + 10) / 10).toInt() * 10 // Round up to the nearest 10
 
     // Parse and format the date
     val parsedDate = ZonedDateTime.parse(data.fecha)
     val formattedDate = parsedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
 
-    // Determine the background color based on the temperature
+    // Determine the color based on the temperature
     val backgroundColor = getBackgroundColor(data.temperatura)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
         // Título: Nombre del dispositivo
-        Text(text = data.NombreDispositivo, fontSize = 32.sp, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+        Text(
+            text = data.NombreDispositivo,
+            fontSize = 32.sp,
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .wrapContentSize()
+        )
 
         // Gráfica de promedio de temperatura
-        Canvas(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.35f).padding(top = 32.dp)) {
+        Canvas(modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.35f)
+            .padding(top = 32.dp)
+        ) {
             val barWidth = size.width / 24
             val points = mutableListOf<Offset?>()
 
@@ -165,7 +210,7 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
             }
 
             // Draw Y axis labels
-            for (i in 0..yAxisMax step 5) {
+            for (i in 0..yAxisMax step 10) {
                 val y = size.height - (i / yAxisMax.toFloat() * size.height)
                 drawContext.canvas.nativeCanvas.drawText(
                     i.toString(),
@@ -233,7 +278,8 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(
-                    horizontalAlignment = Alignment.Start
+                    horizontalAlignment = Alignment.Start,
+                    modifier = Modifier.wrapContentSize()
                 ) {
                     Text(text = "Fecha: $formattedDate", fontSize = 20.sp, color = Color.Black)
                     Text(text = "Hora: ${data.hora}", fontSize = 20.sp, color = Color.Black)
@@ -243,7 +289,9 @@ fun TemperatureContent2(data: TemperatureResponse, averageData: List<Temperature
                     fontSize = 40.sp, // Larger font size
                     fontWeight = FontWeight.Bold, // Bold text
                     color = Color.Black,
-                    modifier = Modifier.align(Alignment.CenterVertically)
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .wrapContentSize()
                 )
             }
         }
@@ -264,9 +312,9 @@ fun getBackgroundColor(temperature: Double): Color {
 
 @Preview(showBackground = true)
 @Composable
-fun TemperatureControl2ScreenPreview() {
+fun TemperatureControlScreenPreview() {
     MyHouseTheme {
-        TemperatureContent2(
+        TemperatureContent(
             TemperatureResponse(
                 temperatura = 33.1,
                 fecha = "2024-10-21T06:00:00.000Z",

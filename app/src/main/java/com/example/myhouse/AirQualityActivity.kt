@@ -159,13 +159,26 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
         // Título: Nombre del dispositivo
-        Text(text = data.NombreDispositivo, fontSize = 32.sp, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+        Text(
+            text = data.NombreDispositivo,
+            fontSize = 32.sp,
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .wrapContentSize()
+        )
 
         // Gráfica de promedio de calidad de aire
-        Canvas(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.35f).padding(top = 32.dp)) {
+        Canvas(modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.35f)
+            .padding(top = 32.dp)
+        ) {
             val barWidth = size.width / 24
             val points = mutableListOf<Offset?>()
 
@@ -275,7 +288,8 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
                 .padding(16.dp)
         ) {
             Column(
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.wrapContentSize()
             ) {
                 Text(text = "Fecha: $formattedDate", fontSize = 20.sp, color = textColor)
                 Text(text = "Hora: ${data.hora}", fontSize = 20.sp, color = textColor)
@@ -284,7 +298,9 @@ fun AirQualityContent(data: AirQualityResponse, averageData: List<AirQualityAver
                     fontSize = 48.sp, // Larger font size
                     fontWeight = FontWeight.Bold, // Bold text
                     color = textColor,
-                    modifier = Modifier.padding(top = 8.dp) // Add some padding to separate from the above text
+                    modifier = Modifier
+                        .padding(top = 8.dp) // Add some padding to separate from the above text
+                        .wrapContentSize()
                 )
             }
         }
