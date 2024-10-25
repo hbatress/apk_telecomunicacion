@@ -24,6 +24,7 @@ class AirQualityTemperatureService : Service() {
     private var lastAirQualityRange: Int? = null
     private var lastTemperatureRange: Int? = null
     private var isHighTemperatureNotificationSent = false
+    private var isHighTemperature = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("AirQualityTemperatureService", "onStartCommand called")
@@ -91,11 +92,12 @@ class AirQualityTemperatureService : Service() {
                         lastTemperatureRange = currentRange
                     }
                     if (temperature > 40) {
-                        if (!isHighTemperatureNotificationSent) {
-                            sendHighTemperatureNotification(temperature)
-                            isHighTemperatureNotificationSent = true
+                        if (!isHighTemperature) {
+                            isHighTemperature = true
+                            startHighTemperatureNotifications(temperature)
                         }
                     } else {
+                        isHighTemperature = false
                         isHighTemperatureNotificationSent = false
                     }
                 } else {
@@ -238,6 +240,15 @@ class AirQualityTemperatureService : Service() {
         }
     }
 
+    private fun startHighTemperatureNotifications(temperature: Double) {
+        coroutineScope.launch {
+            while (isHighTemperature) {
+                sendHighTemperatureNotification(temperature)
+                delay(3000)
+            }
+        }
+    }
+
     private fun sendHighTemperatureNotification(temperature: Double) {
         Log.d("AirQualityTemperatureService", "Sending high temperature notification for temperature: $temperature")
         val channelId = "high_temperature_channel"
@@ -260,12 +271,6 @@ class AirQualityTemperatureService : Service() {
         try {
             NotificationManagerCompat.from(this).notify(3, notification)
             Log.d("AirQualityTemperatureService", "High temperature notification sent: $temperature°C")
-            coroutineScope.launch {
-                while (temperature > 40) {
-                    NotificationManagerCompat.from(this@AirQualityTemperatureService).notify(3, notification)
-                    delay(3000)
-                }
-            }
         } catch (e: SecurityException) {
             Log.e("AirQualityTemperatureService", "SecurityException: ${e.message}")
         }

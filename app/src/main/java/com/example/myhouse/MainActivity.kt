@@ -41,6 +41,13 @@ class MainActivity : ComponentActivity() {
         if (userId != null) {
             // Usuario ha iniciado sesión, redirigir a HomeActivity
             startActivity(Intent(this, HomeActivity::class.java))
+
+            // Iniciar el servicio AirQualityTemperatureService con el userId
+            val intent = Intent(this, AirQualityTemperatureService::class.java).apply {
+                putExtra("userId", userId)
+            }
+            startService(intent)
+
             finish()
         } else {
             // Usuario no ha iniciado sesión, redirigir a LoginActivity
