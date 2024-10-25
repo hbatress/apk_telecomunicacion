@@ -11,6 +11,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +58,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val userInfo = remember { mutableStateOf<UserInfo?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    var passwordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -86,13 +90,61 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 Image(
                     painter = userIcon,
                     contentDescription = "User Icon",
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(100.dp) // Aumentar el tamaño del icono
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 userInfo.value?.let { user ->
-                    Text(text = "Correo: ${user.correo}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "Contraseña: ${user.contrasena}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "Cantidad de dispositivos: ${user.cantidad_dispositivos}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().padding(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val emailIcon: Painter = painterResource(id = R.drawable.ic_email)
+                                Image(
+                                    painter = emailIcon,
+                                    contentDescription = "Email Icon",
+                                    modifier = Modifier.size(60.dp) // Ajustar el tamaño del icono
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "Correo: ${user.correo}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val passwordIcon: Painter = painterResource(id = R.drawable.ic_password)
+                                Image(
+                                    painter = passwordIcon,
+                                    contentDescription = "Password Icon",
+                                    modifier = Modifier.size(60.dp) // Ajustar el tamaño del icono
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Contraseña: ${if (passwordVisible) user.contrasena else "****"}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                        contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                                    )
+                                }
+                            }
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val devicesIcon: Painter = painterResource(id = R.drawable.ic_devices)
+                                Image(
+                                    painter = devicesIcon,
+                                    contentDescription = "Devices Icon",
+                                    modifier = Modifier.size(60.dp) // Ajustar el tamaño del icono
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "Cantidad de dispositivos: ${user.cantidad_dispositivos}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 } ?: run {
                     Text(text = "Cargando información del usuario...", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
